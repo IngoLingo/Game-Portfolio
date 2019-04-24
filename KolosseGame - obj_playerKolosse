@@ -1,0 +1,693 @@
+Information about object: obj_playerKolosse
+Sprite: spr_noneNone
+Solid: false
+Visible: true
+Depth: 0
+Persistent: false
+Parent: par_pauseable
+Children: 
+Mask: 
+
+No Physics Object
+Create Event:
+
+execute code:
+
+///Initialize player variables
+
+ //Player Number
+playerSlot = 1;
+
+ //Depth
+depth = -room_height-1;
+
+ //Note: Make these numbers the default/bench mark for most kolosse
+hsp = 0;
+hsp_f = .0;
+hsp_final = 0;
+vsp = 0;
+vsp_f = .0;
+vsp_final = 0;
+grv = 0.9;
+frc = 2;
+acc = 2;
+jmp = -16
+hsp_max = 10;
+vsp_max = 20;
+jbuff = 0;
+djump = 0;
+stopMoving = false;
+iframes = 5;
+menuDelay = 0;
+
+hdir = 0;
+vdir = -1;
+savespeed = noone;
+owner = 1;
+
+p = 0; //percentage of the target, counted after the attack's damage is added (0 - 99)
+d = 0; //damage the attack dealt (1 - 99)
+w = 0; //weight of the target.(1 - 0.x)
+s = 0; //attack's knockback scaling (0.x - 2)
+b = 0; //base knockback
+
+image_speed = 0.5;
+attackDuration = 0;
+
+
+con_drawParty.selectedMember = partyList.k1;
+
+execute code:
+
+///Party Selected Stats
+partySelect = global.firstInParty;
+    
+selected = global.firstInParty;
+
+/*
+playerPartySelect = global.firstInParty;
+    
+playerSelected = global.firstInParty;
+*/
+// Initualize and Select the first Kolosse in the party / The species gets saved
+myID = global.playerParty[# 0, global.firstInParty];
+
+// Initualize and Set Level / The level saved
+level = global.playerParty[# 2, global.firstInParty];
+
+// Initualize the damage variable / The damage gets saved, until stored in storage
+damage = global.playerParty[# 4, global.firstInParty];
+statusConditon = global.playerParty[# 16, global.firstInParty];
+
+// Initualize and Set the Hidden Stat Values / The Set HV gets saved
+HvHp = global.playerParty[# 5, global.firstInParty];
+HvAt = global.playerParty[# 6, global.firstInParty];
+HvDf = global.playerParty[# 7, global.firstInParty];
+HvFs = global.playerParty[# 8, global.firstInParty];
+HvSt = global.playerParty[# 9, global.firstInParty];
+HvSp = global.playerParty[# 10, global.firstInParty];
+// Max total Hidden Value = 600; Max Hidden Value per stat = 300
+
+
+// Initualize and Set the Current Stats
+totalHP     = floor((global.kolosseIndex[#  3, myID]*2+(HvHp/2))*(level/100)+ level + 10);
+currentHP   = totalHP - damage;
+attack      = floor((global.kolosseIndex[#  4, myID]*2+(HvAt/2))*(level/100)+5);
+defence     = floor((global.kolosseIndex[#  5, myID]*2+(HvDf/2))*(level/100)+5);
+force       = floor((global.kolosseIndex[#  6, myID]*2+(HvFs/2))*(level/100)+5);
+stable      = floor((global.kolosseIndex[#  7, myID]*2+(HvSt/2))*(level/100)+5);
+monSpd      = floor((global.kolosseIndex[#  8, myID]*2+(HvSp/2))*(level/100)+5);
+
+gender = global.playerParty[# 17, global.firstInParty];
+name = global.playerParty[# 1,global.firstInParty];
+
+/*
+Wild Eencounter
+random_range(floor(level/25), round(level/2)+25);
+
+Trainer Eencounter
+random_range(floor(level/10), round(level/2)+45);
+
+VINPC Eencounter
+HV = 100;
+*/
+
+execute code:
+
+///Initialize Animations
+script_execute (global.kolosseIndex[# 10, myID]);
+
+animationState = 0;
+
+for other object: execute code:
+
+///Initialize player states
+
+enum menu1_st {
+    pause,
+    switching,
+    itemUse,
+    run,
+    back
+}
+enum menuSwitch_st {
+    slot1,
+    slot2,
+    slot3,
+    slot4,
+    slot5
+}
+
+/*menuSwitchState = menuSwitch_st = 1;
+menuItemState = menuItem_st.itemHeal;
+enum*/
+
+enum optionKolosse_st { 
+    startingBattle, 
+    battleing, 
+    menu,
+    returning,
+    summoning,
+    switching, 
+    usingItem, 
+    endingBattle
+    
+}
+
+enum battleKolosse_st {
+    normal, air, launched, faint,
+    standAttack,
+    sideAttack,
+    downAttack,
+    upAttack,
+    airAttack,
+    initialize,
+    extra1, extra2 //this is for those extra states that are needed for other kolosse
+}
+
+enum attackKolosse_st {
+    none, 
+    stand, side, down, up,
+    air
+    
+}
+
+
+menu1State = menu1_st.itemUse;
+menuSwitchState = menuSwitch_st.slot1;
+/*menuItemState = menuItem_st.itemHeal;
+*/
+//change global.inWildBattle to be global.partyFollow
+if global.inWildBattle == true {
+    optionState = optionKolosse_st.summoning;//startingBattle;
+} else {optionState = optionKolosse_st.summoning;}
+
+battleState = battleKolosse_st.initialize;
+attackState = attackKolosse_st.none;
+
+execute code:
+
+playerPartySelect = global.firstInParty;
+    
+playerSelected = global.firstInParty;
+
+Step Event:
+
+execute code:
+
+///Counting down invincable frames
+if (iframes > 0) {iframes -= 0.25;} else iframes  = 0;
+
+//Update HP
+currentHP   = totalHP - damage;
+
+
+if optionState == optionKolosse_st.battleing{
+    // Initualize and Set Level / The level saved
+    global.playerParty[# 2, selected] = level;
+    
+    // Initualize the damage variable / The damage gets saved, until stored in storage
+    
+    //global.playerParty[# 16, selected] = statusConditon;
+}
+
+execute code:
+
+///States
+scr_getControlerInputs();
+
+var pauseButton;
+pauseButton = max(key_press_start, key_press_X, key_press_Y, 0);
+
+if optionState = optionKolosse_st.summoning {
+
+    partySelect = con_drawParty.selectedMember - 1;
+    if global.playerParty[# 16, con_drawParty.selectedMember - 1] == "Fainted" {
+        scr_resetFirstInParty();
+        partySelect = global.firstInParty;
+        selected = global.firstInParty;
+    }
+}
+
+switch(optionState)
+{
+    case optionKolosse_st.startingBattle: //
+        scr_player_collideandmove2D_slope();
+        break;
+    
+    case optionKolosse_st.battleing: // This is the main state kolosse is in when battleing
+        if con_battleControler.state == battleControler_st.startingBattle {
+            optionState = optionKolosse_st.startingBattle;
+        }
+        
+        if instance_exists(obj_captureAnim) {
+            optionState = optionKolosse_st.usingItem;
+        }
+        
+        if global.playerParty[# 4, selected] != damage && selected == partySelect{
+             damage = global.playerParty[# 4, selected];
+        }
+        
+        if pauseButton && menuDelay == 0 {
+            /*menu1State = menu1_st.itemUse;
+            optionState = optionKolosse_st.menu;*/
+            with con_pause {
+                
+                state = pause_st.battlePause;
+                mpos = 0;
+                delay = 5;
+                
+                x = 608/2
+                y = 480/3
+                screen_save("pause.png");
+                instance_deactivate_object(par_pauseable);
+                scrn = sprite_add("pause.png", 0, false, true, 0, 0)
+            }
+            
+        }
+        
+        script_execute (global.kolosseIndex[# 13, myID]); //see scr_addKolosseAll
+        
+        //Flip horizontaly
+        if (sign(hsp_final) != 0) image_xscale = sign(hsp_final);
+        
+        break;
+    
+    case optionKolosse_st.menu: //
+        //con_battleControler.state = battleControler_st.slowMoMenu;
+            //Set up variables
+        var move = 0;
+        move = (key_press_right - key_press_left);
+        menu1State = clamp(menu1State,0,4);
+        menu1State += move;
+        
+        var push;
+        push = max(key_press_B,key_down_Y,0);   
+             
+            //When press start or the back button to Unpause
+        if (key_press_A) && menuDelay == 0 { 
+                optionState = optionKolosse_st.battleing;
+                con_battleControler.state = battleControler_st.battleing;
+        } 
+        
+        if push == 1  && menuDelay == 0 {
+            switch (menu1State) {
+                case menu1_st.pause: 
+                    optionState = optionKolosse_st.battleing;
+                    con_battleControler.state = battleControler_st.battleing;
+                    with con_pause {
+                        state = pause_st.battlePause;
+                
+                        x = 608/2
+                        y = 480/3
+                        screen_save("pause.png");
+                        instance_deactivate_object(par_pauseable);
+                        scrn = sprite_add("pause.png", 0, false, true, 0, 0)
+                    }
+                    break;
+                case menu1_st.switching: 
+                    optionState = optionKolosse_st.returning;
+                    con_battleControler.state = battleControler_st.battleing;
+                    
+                    break;
+                case menu1_st.itemUse: 
+                    optionState = optionKolosse_st.usingItem;
+                    break;
+                case menu1_st.run: 
+                    con_battleControler.state = battleControler_st.endingBattle;
+                    break;
+                case menu1_st.back: 
+                    optionState = optionKolosse_st.battleing;
+                    con_battleControler.state = battleControler_st.battleing;
+                    break;
+            }
+        }
+        //gravity
+        break;
+    
+    case optionKolosse_st.returning: //
+        con_battleControler.state = battleControler_st.battleing;
+        //menuSwitchState = menuSwitch_st.slot1
+        if sprite_index == spr_returnPH && image_index >= 7 {
+            image_speed = 1;
+            animationState = 15;
+            
+            x = xstart;
+            y = ystart;
+            
+            with con_pause {
+                state = pause_st.party;
+                mpos = 0;
+                delay = 5;
+                
+                x = 608/2
+                y = 480/3
+                screen_save("pause.png");
+                instance_deactivate_object(par_pauseable);
+                scrn = sprite_add("pause.png", 0, false, true, 0, 0)
+            }
+            optionState = optionKolosse_st.switching;
+        }
+        break;
+    
+    case optionKolosse_st.summoning: //
+        if sprite_index == spr_summonPH && image_index >= 7 {
+            battleState = battleKolosse_st.initialize;
+            optionState = optionKolosse_st.battleing;
+            image_speed = 1;
+            animationState = 0;
+        }
+        break;
+    
+    case optionKolosse_st.switching: //
+        
+        //create a cool down period before you can switch again and have it start counting down after sumoning
+        //gravity
+        break;
+    
+    case optionKolosse_st.usingItem: //
+        if !instance_exists(obj_captureAnim) {optionState = optionKolosse_st.battleing;}
+        
+        //create a cool down period before you can use another item and have it count down after geting back into the battleing state
+        //gravity
+        break;
+    
+    case optionKolosse_st.endingBattle: //
+        //gravity
+        break;
+    
+}
+
+execute code:
+
+///This is how Party Switch works #3
+
+if selected != partySelect{// || (selected == partySelect && optionState == optionKolosse_st.summoning) {
+    global.playerParty[# 4, selected] = damage;
+    
+    // Initualize and Select the first Kolosse in the party / The species gets saved
+    myID = global.playerParty[# 0, partySelect];
+    
+    // Initualize and Set Level / The level saved
+    level = global.playerParty[# 2, partySelect];
+    
+    // Initualize the damage variable / The damage gets saved, until stored in storage
+    damage = global.playerParty[# 4, partySelect];
+    statusConditon = global.playerParty[# 16, partySelect];
+    
+    // Initualize and Set the Hidden Stat Values / The Set HV gets saved
+    HvHp = global.playerParty[# 5, partySelect];
+    HvAt = global.playerParty[# 6, partySelect];
+    HvDf = global.playerParty[# 7, partySelect];
+    HvFs = global.playerParty[# 8, partySelect];
+    HvSt = global.playerParty[# 9, partySelect];
+    HvSp = global.playerParty[# 10, partySelect];
+    // Max total Hidden Value = 600; Max Hidden Value per stat = 300
+    
+    
+    // Initualize and Set the Current Stats
+    totalHP     = floor((global.kolosseIndex[#  3, myID]*2+(HvHp/2))*(level/100)+ level + 10);
+    currentHP   = totalHP - damage;
+    attack      = floor((global.kolosseIndex[#  4, myID]*2+(HvAt/2))*(level/100)+5);
+    defence     = floor((global.kolosseIndex[#  5, myID]*2+(HvDf/2))*(level/100)+5);
+    force       = floor((global.kolosseIndex[#  6, myID]*2+(HvFs/2))*(level/100)+5);
+    stable      = floor((global.kolosseIndex[#  7, myID]*2+(HvSt/2))*(level/100)+5);
+    monSpd      = floor((global.kolosseIndex[#  8, myID]*2+(HvSp/2))*(level/100)+5);
+
+    gender = global.playerParty[# 17, partySelect];
+    name = global.playerParty[# 1,partySelect];
+    
+    
+    script_execute (global.kolosseIndex[# 10, myID]);
+    selected = partySelect;
+
+}
+
+
+
+execute code:
+
+///What happens when HP runs out #4
+if currentHP < 0{
+    currentHP = 0;
+}
+
+if currentHP == 0 && optionState == optionKolosse_st.battleing{
+
+    global.playerParty[# 16, selected] = "Fainted";
+    
+    var i;
+    for (i = 0; i < ds_grid_height(global.playerParty); i += 1) {
+        if global.playerParty[# 16, i] != "Fainted" && global.playerParty[# 0, i] != 0 {
+            optionState = optionKolosse_st.returning;
+            break;
+        }
+    }  
+    if  (global.playerParty[# 16, 0] == "Fainted" || global.playerParty[# 0, 0] == 0) &&
+        (global.playerParty[# 16, 1] == "Fainted" || global.playerParty[# 0, 1] == 0) &&
+        (global.playerParty[# 16, 2] == "Fainted" || global.playerParty[# 0, 2] == 0) &&
+        (global.playerParty[# 16, 3] == "Fainted" || global.playerParty[# 0, 3] == 0) &&
+        (global.playerParty[# 16, 4] == "Fainted" || global.playerParty[# 0, 4] == 0) {
+            global.in_battle = 0;
+    }
+}
+
+Collision Event with object par_wall:
+
+execute code:
+
+///Bounce and slow down
+/*if (battleState == battleKolosse_st.launched) {
+    move_bounce_solid(0);
+    hdir *= -1
+    vdir *= -1
+    if (savespeed) != noone {speed = savespeed; savespeed = noone;}
+    speed *= 0.8;
+
+}
+
+
+
+bounce precisely against all objects
+execute code:
+
+///Hopefully make this better
+//make this into a better if stuck inside a wall, go back out the way you came in.
+if x > other.x {
+    x ++
+} else if x < other.x {
+    x --
+}
+
+if y > other.y {
+    y ++
+} else if y < other.y {
+    y --
+}
+
+
+Collision Event with object par_hitbox:
+
+execute code:
+
+if (iframes > 0) || (owner == other.owner) { exit;} else {
+
+    d = other.d; //damage the attack dealt (1 - 100)
+    s = other.s; //attack's knockback scaling (0.x - 2)
+    b = other.b; //base knockback
+    hdir = other.hdir; //horizontal direction
+    vdir = other.vdir; //vertical direction
+    friction = other.fric;
+    
+    p = 5 //to controle knockback
+    
+    
+    p += d; //percentage of the target, counted after the attack's damage is added (0 - 100)
+    w = 1; //weight of the target.(1 - 30)
+    
+    
+    image_xscale = sign(-other.image_xscale);
+    iframes = 10;
+    
+    // Reduce HP
+    damage = Approach(damage, totalHP, 
+            irandom_range(  floor(obj_enemyKolosse.attack)-floor(obj_enemyKolosse.attack/5),
+                            floor(obj_enemyKolosse.attack)-floor(obj_enemyKolosse.attack/10)));
+    global.playerParty[# 4, selected] = damage;
+                            
+                            
+    if (other.s < 1) {exit;}
+    
+    battleState = battleKolosse_st.launched;
+    hsp = 0;
+    vsp = 0;
+    
+    speed = (((p/10+(p*d)/20)*20/(w+10))+b)*s //200+ is the danger zone for clipping through walls
+    direction = point_direction(x,y,x+(hdir * sign(other.image_xscale)),y+(vdir * sign(other.image_yscale)));
+    
+    // Helps with the character not going through the wall/floor
+    if collision_line(x,y,x+lengthdir_x(32,direction),y+lengthdir_y(32,direction),par_wall,1,1)
+    {
+        speed *= 0.5;
+        direction = point_direction(x,y,x+(vdir*sign(-image_xscale)),y+(hdir*sign(-image_xscale)));
+    } 
+}
+
+Other Event: Outside Room:
+
+execute code:
+
+currentHP = 0;
+statusConditon = "Fainted";
+x = xstart;
+y = ystart;
+
+Other Event: Outside View 0:
+
+execute code:
+
+///Nothing
+
+Draw Event:
+
+execute code:
+
+///Invincable Flash
+if iframes % 2 == 1 {
+    image_alpha = 0;
+} else if iframes % 2 == 0 {
+    image_alpha = 1;
+}
+
+Draw the instance
+execute code:
+
+///Drawing States
+
+
+switch(optionState)
+{
+    case optionKolosse_st.startingBattle: //
+        scr_kolosseBattleAnimations();
+    break;
+    
+    case optionKolosse_st.battleing: //
+        scr_kolosseBattleAnimations();
+    break;
+    
+    case optionKolosse_st.menu: //
+        scr_kolosseBattleAnimations();
+    break;
+    
+    case optionKolosse_st.returning: //
+        sprite_index = spr_returnPH;
+        image_speed = 0.5;
+    break;
+    
+    case optionKolosse_st.summoning: //
+        sprite_index = spr_summonPH;
+        image_speed = 0.5;
+    break;
+    
+    case optionKolosse_st.switching: //
+        scr_kolosseBattleAnimations();
+    break;
+    
+    case optionKolosse_st.usingItem: //
+        //gravity
+    break;
+    
+    case optionKolosse_st.endingBattle: //
+        //gravity
+    break;
+    
+}
+
+execute code:
+
+///drawing stats
+/*
+draw_text(x,y-32*9,"Name " + string(global.playerParty[# 1, partySelect]));
+draw_text(x,y-32*8,"Level " + string(level));
+draw_text(x,y-32*7,"currentHP " + string(currentHP));
+draw_text(x,y-32*6,"totalHP " + string(totalHP));
+draw_text(x,y-32*5,"attack " + string(attack));
+draw_text(x,y-32*4,"defence " + string(defence));
+draw_text(x,y-32*3,"force " + string(force));
+draw_text(x,y-32*2,"stable " + string(stable));
+draw_text(x,y-32,"monSpd " + string(monSpd));
+*/
+//draw_text(x,y,"iframes " + string(iframes));
+//draw_text(x,y+32,"optionState " + string(optionState));
+draw_text(x,y-64,"iframes " + string(iframes));
+/*
+draw_text(x,y+32,"selected " + string(selected));
+draw_text(x,y+64,"partySelect " + string(partySelect));
+draw_text(x,y+94,"global.firstInParty " + string(global.firstInParty));
+
+Draw GUI Event:
+
+execute code:
+
+
+        centerX = 288;
+        centerY = 256;
+        
+switch(optionState)
+{
+    
+    case optionKolosse_st.menu: //  
+             
+        var i;
+        var space = 70;
+        for (i = 0; i <= menu1_st.back; i += 1) {
+            draw_set_colour(c_white);
+            draw_sprite(spr_inBattleMenu1, i, centerX - (space*2) + (space*i), centerY-space);
+        }
+        
+        switch (menu1State) {
+            case menu1_st.pause: draw_sprite(spr_select, 0, centerX-(space*2), centerY-space);
+            break;
+            case menu1_st.switching: draw_sprite(spr_select, 0, centerX-(space*1), centerY-space);
+            break;
+            case menu1_st.itemUse: draw_sprite(spr_select, 0, centerX+(space*0), centerY-space);
+            break;
+            case menu1_st.run: draw_sprite(spr_select, 0, centerX+(space*1), centerY-space);
+            break;
+            case menu1_st.back: draw_sprite(spr_select, 0, centerX+(space*2), centerY-space); 
+            break;
+        }
+        break;
+        
+    case optionKolosse_st.switching: //
+        var i;
+        var space = 70;
+        for (i = 0; i <= 4; i += 1) {
+            draw_set_colour(c_white);
+            var ID =  global.playerParty[# 0, i];
+            script_execute (global.kolosseIndex[# 10, ID]);
+            draw_sprite(idleAnim, 0, centerX - (space*2) + (space*i), centerY+64);
+        }
+        
+        switch (menuSwitchState) {
+            case menuSwitch_st.slot1: draw_sprite(spr_select, 0, centerX-(space*2), centerY+64);
+            break;
+            case menuSwitch_st.slot2: draw_sprite(spr_select, 0, centerX-(space*1), centerY+64);
+            break;
+            case menuSwitch_st.slot3: draw_sprite(spr_select, 0, centerX+(space*0), centerY+64);
+            break;
+            case menuSwitch_st.slot4: draw_sprite(spr_select, 0, centerX+(space*1), centerY+64);
+            break;
+            case menuSwitch_st.slot5: draw_sprite(spr_select, 0, centerX+(space*2), centerY+64); 
+            break;
+        }
+    break;
+}
+
+Key Press Event for P-key Key:
+
+execute code:
+
+//scr_addCapturedToParty();
+//global.in_battle = 0;
+
