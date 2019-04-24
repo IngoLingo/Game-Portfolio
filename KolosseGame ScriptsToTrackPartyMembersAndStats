@@ -1,0 +1,105 @@
+////OBJECT////
+///con_kolosseCreate
+
+scr_kolosseDsGridCreate();
+scr_addKolosseAll(); //This fills out the empty slots in the kolosseIndex grid
+global.playerStarter = 0;
+
+maxParty = 5;
+storedStats = 20; //0 to 19 stats reffrenced in the party list
+
+global.playerParty = ds_grid_create(storedStats, maxParty);
+ds_grid_clear(global.playerParty, 0); //Set every position to 0
+
+global.enemyParty = ds_grid_create(storedStats, maxParty);
+ds_grid_clear(global.enemyParty, 0); //Set every position to 0
+
+
+
+////SCRIPTS////
+///scr_kolosseDsGridCreate
+
+enum kolosse {
+    none,
+    peadot,
+    grizling,
+    tridon,
+    blueBird,
+    chipSquirrel,
+    doodleBug,
+    monky,
+    elecWeel,
+    
+    
+    
+    total //this set to be last so to count the total. Nice becuse the first enum starts at zero
+}
+
+enum kolosseStat {
+    species,
+    typeOne, typeTwo,
+    healthBase, attackBase, defenceBase, forceBase, stableBase, speedBase,
+    levelSpeed,
+    animationList, 
+    whenEvolve, //make this none or a number
+    moveList, //move name and the level it is learnd in a grid
+    battleStateScript, //this stors the state mechanice of the kolosse
+    
+    total //this set to be last so to count the total. Nice becuse the first enum starts at zero
+} 
+
+global.kolosseIndex = ds_grid_create(kolosseStat.total, kolosse.total);
+ds_grid_clear(global.kolosseIndex, 0); //Set every position to 0
+
+
+///scr_addKolosseAll
+
+//This is blank
+scr_addKolosseBaseStats(kolosse.none,           "None", "None", "None", "None", 0, 0, 0, 0, 0, 0, scr_000Animations, 0, 0, 0);
+
+scr_addKolosseBaseStats(kolosse.peadot,         "Peadot", "Plant", "Flying",        55, 46, 50, 65, 65, 45, "Regular", scr_001Animations, 20, scr_001Moves, scr_001BattleStates);
+//adding other stats script becuse arguments can only hold 0-15.
+
+scr_addKolosseBaseStats(kolosse.grizling,       "Grizling", "Fire", " ",            50, 50, 50, 65, 65, 45, "Regular", scr_004Animations, 20, scr_001Moves, scr_004BattleStates); //change to 004
+//adding other stats script becuse arguments can only hold 0-15.
+
+scr_addKolosseBaseStats(kolosse.tridon,         "Tridon", "Water", " ",             65, 42, 50, 65, 65, 45, "Regular", scr_007Animations, 20, scr_001Moves, scr_007BattleStates); //change to 007
+//adding other stats script becuse arguments can only hold 0-15.
+
+scr_addKolosseBaseStats(kolosse.blueBird,       "Blue Bird", "Flying", " ",         45, 40, 50, 65, 65, 45, "Regular", scr_009Animations, 20, scr_001Moves, scr_009BattleStates); //change to 
+//adding other stats script becuse arguments can only hold 0-15.
+
+scr_addKolosseBaseStats(kolosse.chipSquirrel,   "Chip Squirrel", "Beast", " ",      40, 45, 50, 65, 65, 45, "Regular", scr_011Animations, 20, scr_001Moves, scr_011BattleStates); //change to 
+//adding other stats script becuse arguments can only hold 0-15.
+
+
+scr_addKolosseBaseStats(kolosse.doodleBug,      "Doodle Bug", "Insect", " ",        35, 42, 50, 65, 65, 45, "Regular", scr_014Animations, 20, scr_001Moves, scr_007BattleStates); //change to 
+//adding other stats script becuse arguments can only hold 0-15.
+
+scr_addKolosseBaseStats(kolosse.monky,          "Monky", "Beast", " ",              45, 50, 50, 65, 65, 45, "Regular", scr_017Animations, 20, scr_001Moves, scr_017BattleStates); //change to 
+//adding other stats script becuse arguments can only hold 0-15.
+
+scr_addKolosseBaseStats(kolosse.elecWeel,       "Elec Weel", "Electricity", " ",    39, 55, 50, 65, 65, 45, "Regular", scr_019Animations, 20, scr_019Moves, scr_019BattleStates); //change to 
+//adding other stats script becuse arguments can only hold 0-15.
+
+
+
+///scr_addKolosseBaseStats
+
+var iid = argument0;
+global.kolosseIndex[# kolosseStat.species, iid] = argument1;
+global.kolosseIndex[# kolosseStat.typeOne, iid] = argument2;
+global.kolosseIndex[# kolosseStat.typeTwo, iid] = argument3;
+
+global.kolosseIndex[# kolosseStat.healthBase, iid] = argument4;
+global.kolosseIndex[# kolosseStat.attackBase, iid] = argument5;
+global.kolosseIndex[# kolosseStat.defenceBase, iid] = argument6;
+global.kolosseIndex[# kolosseStat.forceBase, iid] = argument7;
+global.kolosseIndex[# kolosseStat.stableBase, iid] = argument8;
+global.kolosseIndex[# kolosseStat.speedBase, iid] = argument9;
+
+global.kolosseIndex[# kolosseStat.levelSpeed, iid] = argument10;
+global.kolosseIndex[# kolosseStat.animationList, iid] = argument11;
+global.kolosseIndex[# kolosseStat.whenEvolve, iid] = argument12;
+global.kolosseIndex[# kolosseStat.moveList, iid] = argument13;
+global.kolosseIndex[# kolosseStat.battleStateScript, iid] = argument14;
