@@ -1,0 +1,170 @@
+Information about object: obj_player
+Sprite: s_player
+Solid: false
+Visible: true
+Depth: 10000
+Persistent: false
+Parent: 
+Children: 
+Mask: 
+
+No Physics Object
+Create Event:
+
+execute code:
+
+/// Initialize Player
+z = 32; // Create the Z variable
+dir = 0; // Direction the player is faceing
+move_speed = 2; // How fast the player moves
+turn_speed = 3; // How fast the player turns
+dead = false;
+
+// Create target variables for movement
+target_dir = dir;
+target_x = x;
+target_y = y;
+
+// Set the default draw color to white
+draw_set_colour(c_white);
+
+// Start 3D drawing
+d3d_start();
+
+// Set the fog
+dark_purple = make_colour_rgb(27, 3, 59);
+d3d_set_fog(true, dark_purple, 128, 256);
+
+Step Event:
+
+execute code:
+
+/// Check if player can see plants
+if dead == true {exit;}
+
+var inst = instance_nearest(x, y, par_plant);
+var instF = instance_nearest(x, y, obj_foliage);
+
+        var x1 = x + lengthdir_x(224, dir - 45);
+        var y1 = y + lengthdir_y(224, dir - 45);
+        var x2 = x + lengthdir_x(224, dir + 45);
+        var y2 = y + lengthdir_y(224, dir + 45);
+        
+if instance_exists(par_plant)
+    {
+        if point_in_triangle(inst.x, inst.y, x, y, x1, y1, x2, y2){
+            with par_plant {
+                growth = false;
+                if level > 15 {level = 15;}
+            } 
+        }else {
+            with par_plant {
+                growth = true;
+            }
+            
+        }
+    }
+
+if instance_exists(obj_foliage)
+    {
+            if point_in_triangle(instF.x, instF.y, x, y, x1, y1, x2, y2){
+            with obj_foliage {
+                growth = false;
+            } 
+        }else {
+            with obj_foliage {
+                growth = true;
+            }
+            
+        }
+    }
+
+execute code:
+
+///Check if entangled in foliage
+if (!place_meeting(x,y,obj_foliage)){
+    move_speed = 2; // How fast the player moves
+    turn_speed = 3; // How fast the player turns
+}
+
+execute code:
+
+/// Update the direction and position
+dir = lerp(dir, target_dir, .1);
+x = lerp(x, target_x, .1);
+y = lerp(y, target_y, .1);
+
+Keyboard Event for <Left> Key:
+
+execute code:
+
+/// Turn left
+target_dir += turn_speed;
+
+Keyboard Event for <Up> Key:
+
+execute code:
+
+/// Move forward
+// Get the movement vector
+if dead == true {exit;}
+var vect_x = lengthdir_x(move_speed, target_dir);
+var vect_y = lengthdir_y(move_speed, target_dir);
+
+// Move forward if there isn't a wall in the way
+if (!place_meeting(target_x+vect_x, target_y+vect_y, par_wall)) {
+    target_x += vect_x;
+    target_y += vect_y;
+}
+/*if (place_meeting(target_x+vect_x, target_y+vect_y, par_wall)) {
+    target_dir += turn_speed;
+} else if (place_meeting(target_x+vect_x, target_y+vect_y, par_wall)) {
+    target_dir -= turn_speed;
+}
+
+//make player sidestep if they are just bearly touching the wall. Like how mario avoids hiting blocks if he is barly under them
+
+Keyboard Event for <Right> Key:
+
+execute code:
+
+/// Turn right
+target_dir -= turn_speed;
+
+Keyboard Event for <Down> Key:
+
+execute code:
+
+/// Move backword
+// Get the movement vector
+if dead == true {exit;}
+var vect_x = lengthdir_x(move_speed/2, target_dir);
+var vect_y = lengthdir_y(move_speed/2, target_dir);
+
+// Move back if there isn't a wall in the way
+if (!place_meeting(target_x-vect_x, target_y-vect_y, par_wall)) {
+    target_x -= vect_x;
+    target_y -= vect_y;
+}
+
+Draw Event:
+
+execute code:
+
+/// Draw the projection
+// Get the view direction vector
+var vect_x = lengthdir_x(32, dir);
+var vect_y = lengthdir_y(32, dir);
+
+// Set the projection
+d3d_set_projection(x, y, z, x+vect_x, y+vect_y, z, 0, 0, 1);
+
+Key Press Event for A-key Key:
+
+execute code:
+
+///Create Textbox
+if !instance_exists(obj_textbox){
+    instance_create(0,(view_hview[0]*2)-128,obj_textbox);
+}
+
