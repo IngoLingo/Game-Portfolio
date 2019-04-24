@@ -1,0 +1,168 @@
+Information about object: obj_playerHuman
+Sprite: spr_playerSouth
+Solid: false
+Visible: true
+Depth: 0
+Persistent: true
+Parent: par_player
+Children: 
+Mask: col_16x16
+
+No Physics Object
+Create Event:
+
+execute code:
+
+/// State machine for player character
+    enum playerHuman_st {
+        normal,
+        cutscene
+    }
+state = playerHuman_st.normal;
+
+execute code:
+
+///set x-position / y-position In Room
+   /*
+      We set the position only if the global.xx/yy is not equal to
+      -1. This is a fail safe code that makes sure we avoid errors;
+   */
+   if ( global.xx != -1 && global.yy != -1 ) {
+      x = global.xx;
+      y = global.yy;
+   }
+
+
+for other object: execute code:
+
+///Initialize Animation and Sprites
+if (global.playerGender == 0) {
+    sprite_index = spr_playerGirl_down;
+    sprUp = spr_playerGirl_up;
+    sprDown = spr_playerGirl_down;
+    sprLeft = spr_playerGirl_left;
+    sprRight = spr_playerGirl_right;
+} else {
+    sprUp = spr_playerBoy_up;
+    sprDown = spr_playerBoy_down;
+    sprLeft = spr_playerBoy_left;
+    sprRight = spr_playerBoy_right;
+}
+/*
+if (playerGender == 0) {
+ global.siblingName = "John";
+} else {global.siblingName = "Jane";}
+
+    sprUp = spr_playerNorth;
+    sprDown = spr_playerSouth;
+    sprLeft = spr_playerWest;
+    sprRight = spr_playerEast;
+
+execute code:
+
+///Cutsene Var. (like NPC)
+cut_state = 'wait';
+
+execute code:
+
+///Initialize the player
+// Movements
+canMove = true;
+target_x = x;
+target_y = y;
+moving = false;
+movespeed = 4; //speed of character moving. 4 = walking, 8 = running, 16 = rideing
+moveDistance = 16; //distance character moves. 16 = walking and running, 32 = rideing
+faceing = "South";
+talkWait = 0;
+
+// Player Number (in case multiple players)
+playerSlot = 1;
+
+// Trates
+/*playerGender = global.myGender;
+global.playerGender = global.myGender;
+*/
+// Starting the player to be motionless
+image_speed = 0;
+image_index = 0;
+
+
+
+// Initialize Cutscene State
+/*cut_state = 'wait'
+timeline_index = tl_none;
+timeline_position = 0;
+timeline_running = false;
+timeline_loop = false;
+*/
+
+glowSize = 1;
+colideWith = 0;
+encounterWait = false;
+
+Alarm Event for alarm 0:
+
+execute code:
+
+///Acticvate if obj_textbox dose not exist
+if instance_exists(obj_textbox){
+    state = playerHuman_st.cutscene;
+} else {
+    state = playerHuman_st.normal;
+}
+
+Step Event:
+
+execute code:
+
+///Depth equals the "Y" posision times by "-1"
+depth = -y;
+
+execute code:
+
+///Check to see if textbox is visable
+/*if (instance_exists(obj_textbox)) {
+    state = playerHuman_st.cutscene;
+    cut_state = 'wait';
+}
+
+execute code:
+
+///Switch Player State
+switch (state){
+    case playerHuman_st.normal: scr_getControlerInputs(); scr_playerHumanNormal(); break;
+    case playerHuman_st.cutscene: scr_getEnemyControlerInputs(); scr_NPCNormal(); break;
+}
+
+execute code:
+
+///Glow flicker
+var dif = choose(0.01,-0.01,0);
+glowSize += dif;
+glowSize = clamp(glowSize,0.99,1.1)
+
+if talkWait > 0 {
+    talkWait--;
+}
+
+Other Event: Outside View 0:
+
+execute code:
+
+///Nothing
+
+Draw Event:
+
+at position (x,y+14) draw image -1 of sprite spr_overworldShadow
+Draw the instance
+set the drawing color to 64
+execute code:
+
+/*var i;
+for (i = 0; i < ds_grid_height(global.playerParty); i += 1) {
+    draw_text(x+1 + 32, y + (i  * 32)+1, string(global.playerParty[# 16, i]));
+}
+
+draw_text(x-32,y-32,"global.firstInParty: " + string(global.firstInParty));
+
